@@ -1,29 +1,6 @@
-![](docs/yivo.png)
+MIT License
 
-![Cpp](https://github.com/MomsFriendlyRobotCompany/yivo.cpp/workflows/Cpp/badge.svg)
-![GitHub](https://img.shields.io/github/license/MomsFriendlyRobotCompany/yivo.cpp)
-
-# Yivo
-
-**Work in Progress**
-
-# API
-
-| Part | In Checksum | Type  | Description |
-|------|-------------|-------|-------------|
-| Header |   | `uint8_t[2]`  | default `$K` |
-| Size   | x | `uint16_t`    | 0-65,535 bytes |
-| Type   | x | `uint8_t`     | 256 message IDs |
-| Data   | x | `uint8_t[NN]` | payload data array |
-| Checksum | | `uint8_t`     | XOR of size, type, and data bytes |
-
-| 0 | 1 | 2 | 3 | 4 | ... | -1 |
-|---|---|---|---|---|-----|----|
-|`$`|`K`| N | N | T | ... | checksum |
-
-# MIT License
-
-**Copyright (c) 2020 Mom's Friendly Robot Company**
+Copyright (c) 2020 Mom's Friendly Robot Company
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
