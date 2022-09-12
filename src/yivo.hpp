@@ -28,16 +28,30 @@ SOFTWARE.
 #include <cstring>
 // #include <stdio.h>
 // #include <map>
+#include "messages.hpp"
 
 constexpr int BUFFER_SIZE = 256;
 
 // Message IDs
+constexpr int PING      = 10;
+
 constexpr int IMU_AGMQT = 140;
 constexpr int IMU_AGMT  = 141;
 constexpr int IMU_AGT   = 142;
 constexpr int IMU_AT    = 143;
 constexpr int MAGNETIC  = 144;
 constexpr int RANGE     = 145;
+constexpr int GPS       = 146;
+constexpr int PRES_TEMP = 147;
+constexpr int VOLTAGE   = 148;
+
+constexpr int MOTORS    = 200;
+constexpr int SET_MOTORS= 201;
+constexpr int SET_ACCEL_CAL = 202;
+constexpr int SET_GYRO_CAL  = 203;
+constexpr int SET_MAG_CAL   = 204;
+constexpr int SET_TEL_STREAM= 205;
+
 constexpr int YIVO_ERROR= 250;
 
 union int_t {
@@ -55,72 +69,17 @@ enum Error {
     EXCEED_BUFFER    = 32
 };
 
-// std::map<int,
-
-// static uint8_t checksum(uint16_t size, uint8_t msgid, uint8_t *data){
-//     uint8_t cs = 0;
-//     // uint8_t hb = uint8_t(size >> 8);
-//     // uint8_t lb = uint8_t(size & 0xFFFF);
-//     // cs = lb ^ hb;
-//     int_t v;
-//     v.b16 = size;
-//     cs = v.b8[0] ^ v.b8[1];
-//     cs ^= msgid;
-//     for (int i=0; i < size; ++i) {
-//         cs ^= data[i];
-//     }
-
-//     return cs;
-// }
-
 
 uint8_t checksum(uint16_t size, uint8_t msgid, uint8_t *data);
-
-// struct msg_t {
-//     uint8_t msgid;
-//     uint16_t size;
-//     uint8_t *payload;
-//     // uint8_t cs;
-// };
-
-// struct base_t {
-//     float timestamp;
-// };
-
-struct ImuA_t {
-    float ax, ay, az;
-    // float temperature;
-    // float timestamp;
-};
-struct ImuAGT_t {
-    float ax, ay, az;
-    float gx, gy, gz;
-    float temperature;
-    float timestamp;
-};
-struct ImuAGMT_t {
-    float ax, ay, az;
-    float gx, gy, gz;
-    float mx, my, mz;
-    float temperature;
-    float timestamp;
-};
-struct ImuAGMQT_t {
-    float ax, ay, az;
-    float gx, gy, gz;
-    float mx, my, mz;
-    float qw,qx,qy,qz;
-    float temperature;
-    float timestamp;
-};
 
 template<uint32_t size>
 struct Buffer {
 //   static constexpr uint32_t size = 10;
   union {
-    float    f[size];
-    uint32_t l[size];
-    uint8_t  b[size*sizeof(float)];
+    float    f[size];   // float
+    uint32_t l[size];   // long
+    uint16_t s[size*2]; // short
+    uint8_t  b[size*4]; // byte
   };
 
   void clear() {
@@ -146,10 +105,15 @@ class Yivo {
         this->buff[2] = uint8_t(size & 0xFF); // low byte
         this->buff[3] = uint8_t(size >> 8); // high byte
         this->buff[4] = msgid;
-        memcpy(&this->buff[5], data, size);
 
-        uint8_t cs = checksum(size, msgid, data);
-        // printf("cs: %d\n",int(cs));
+        uint8_t cs;
+        if (size > 0) {
+            memcpy(&this->buff[5], data, size);
+            cs = checksum(size, msgid, data);
+        }
+        else {
+            cs = msgid;
+        }
         this->buff[5+size] = cs; // off by 1?
 
         this->size = size;
@@ -157,6 +121,10 @@ class Yivo {
     }
 
 #ifdef Arduino_h
+    inline Error pack_n_send(uint8_t msgid) {
+        return pack_n_send(msgid, nullptr, 0);
+    }
+
     Error pack_n_send(uint8_t msgid, uint8_t *data, uint16_t size) {
       Error err = pack(msgid, data, size);
       if (err == Error::NONE) {
