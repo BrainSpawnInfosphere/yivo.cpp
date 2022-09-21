@@ -21,6 +21,18 @@ struct ImuAGMT_t {
     long timestamp;
 };
 
+struct ImuAGMQPT_t {
+    float ax, ay, az;
+    float gx, gy, gz;
+    float imu_temp;
+    float mx, my, mz;
+    float qw,qx,qy,qz;
+    float pressure;
+    float temperature;
+    long timestamp;
+};
+
+
 struct ImuAGMQT_t {
     float ax, ay, az;
     float gx, gy, gz;

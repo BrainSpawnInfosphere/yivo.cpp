@@ -24,7 +24,7 @@ struct Sensor {
 };
 
 int main(){
-    Yivo yivo;
+    Yivo<256> yivo;
     Sensor sen;
     sen.data.f[0] = 1.1;
     sen.data.f[1] = 2.2;
