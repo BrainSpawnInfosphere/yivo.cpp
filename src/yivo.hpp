@@ -153,10 +153,10 @@ class Yivo {
     }
 
 #ifdef Arduino_h
-    inline int pack_n_send(uint8_t msgid) {
-        // return pack_n_send(msgid, nullptr, 0);
-        return pack_n_send(msgid, this->buff, this->payload_size);
-    }
+    // inline int pack_n_send(uint8_t msgid) {
+    //     // return pack_n_send(msgid, nullptr, 0);
+    //     return pack_n_send(msgid, this->buff, this->payload_size);
+    // }
 
     int pack_n_send(uint8_t msgid, uint8_t *data, uint16_t sz) {
       int size = pack(msgid, data, sz);
@@ -169,9 +169,9 @@ class Yivo {
     /*
     Reads in a packet from a serial connection.
 
-    Returns: message ID
+    Returns: message ID or -1 on error
     */
-    uint8_t read_packet() {
+    int read_packet() {
       int retry = 16;
       while (retry-- > 0) {
         if (Serial.available() > 5) {
@@ -190,15 +190,15 @@ class Yivo {
         else delay(100);
       }
 
-      return 0;
+      return -1;
     }
 #else
-    uint8_t read_packet() {
-        return 0;
+    int read_packet() {
+        return -1;
     }
 
-    inline Error pack_n_send(uint8_t msgid, uint8_t *data=nullptr, uint16_t sz=0) {
-        return Error::NONE;
+    inline int pack_n_send(uint8_t msgid, uint8_t *data=nullptr, uint16_t sz=0) {
+        return -1;
     }
 #endif
 
