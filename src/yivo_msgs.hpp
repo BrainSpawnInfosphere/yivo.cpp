@@ -24,6 +24,31 @@ SOFTWARE.
 #pragma once
 #include <stdint.h>
 
+// Message IDs                 Payload B
+constexpr uint8_t PING      = 10; // 0B
+constexpr uint8_t HEARTBEAT = 11;
+
+constexpr uint8_t IMU_AGMQPT= 139; // 68B
+constexpr uint8_t IMU_AGMQT = 140; // 56B
+constexpr uint8_t IMU_AGMT  = 141;
+constexpr uint8_t IMU_AGT   = 142;
+constexpr uint8_t IMU_AT    = 143;
+constexpr uint8_t MAGNETIC  = 144;
+constexpr uint8_t RANGE     = 145;
+constexpr uint8_t GPS       = 146;
+constexpr uint8_t PRES_TEMP = 147;
+constexpr uint8_t VOLTAGE   = 148;
+
+constexpr uint8_t MOTORS    = 200;
+
+constexpr uint8_t SET_MOTORS    = 201;
+constexpr uint8_t SET_ACCEL_CAL = 202;
+constexpr uint8_t SET_GYRO_CAL  = 203;
+constexpr uint8_t SET_MAG_CAL   = 204;
+constexpr uint8_t SET_TEL_STREAM= 205;
+
+constexpr uint8_t YIVO_ERROR= 250;
+
 struct ImuA_t {
   float ax, ay, az;
   // float temperature;
