@@ -1,58 +1,33 @@
 #include <iostream>
-#include <array>
-#include <vector>
 #include <stdint.h>
 #include <strings.h> // memset
-#include <exception>
 #include <yivo.hpp>
 
 
 using namespace std;
 
-// std::ostream &operator<<(std::ostream &os, Packet const &p) {
-//     // for (uint8_t const& u: p.pkt) os << std::hex << int(u) << ",";
-//     for (uint8_t const& u: p.pkt) os << int(u) << ",";
-//     os << " ";
-//     return os;
-// }
-
+// some struct I want to pack
 struct Sensor {
-    union {
-        float f[10];
-        uint8_t b[10*sizeof(float)];
-    } data;
+  float f[3];
 };
 
 int main(){
-    Yivo<256> yivo;
+    Yivo yivo;
     Sensor sen;
-    sen.data.f[0] = 1.1;
-    sen.data.f[1] = 2.2;
-    sen.data.f[2] = 3.3;
+    sen.f[0] = 1.1;
+    sen.f[1] = 2.2;
+    sen.f[2] = 3.3;
 
-    int err = yivo.pack(IMU_AT, sen.data.b, 3*sizeof(float));
-    cout << err << endl;
+    yivo.pack(10, reinterpret_cast<uint8_t*>(&sen), sizeof(Sensor));
 
     uint8_t *buff = yivo.get_buffer();
     uint16_t size = yivo.get_total_size();
 
-    for (int i=0; i < size; ++i) {
-        cout << int(buff[i]) << ",";
+    Sensor s2 = yivo.unpack<Sensor>();
+    if (sen.f[0] == s2.f[0] && sen.f[1] == s2.f[1] && sen.f[2] == s2.f[2]) {
+      cout << "good!" << endl;
     }
-    cout << endl;
-
-    ImuA_t imu;
-    // memcpy(&imu, &yivo.get_buffer()[5], yivo.get_payload_size());
-    // cout << imu.ay << " " << imu.az << endl;
-
-    // msg_t m = yivo.read_packet();
-    int id = yivo.read_packet();
-    if (id == 1)
-        // imu = yivo.unpack<ImuA_t>(yivo.get_payload_buffer(), yivo.get_payload_size());
-        imu = yivo.unpack<ImuA_t>();
-    else if (false) {}
-
-    cout << imu.ay << " " << imu.az << endl;
+    else cout << "crap!" << endl;
 
     return 0;
 }

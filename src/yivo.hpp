@@ -26,16 +26,17 @@ SOFTWARE.
 
 #include <cstdint>
 #include <cstring>
-#include "messages.hpp"
-#include "msgids.hpp"
 
+// #include<iostream>
+// using std::cout;
+// using std::endl;
 
 union int_t {
   uint16_t b16;
   uint8_t b8[2];
 };
 
-enum Error {
+enum Error: uint8_t {
   NONE = 0,
   INVALID_HEADER   = 1,
   INVALID_LENGTH   = 2,
@@ -48,61 +49,11 @@ enum Error {
 
 uint8_t checksum(uint16_t payload_size, uint8_t msgid, uint8_t *data);
 
-// class Yivo;
+constexpr uint16_t YIVO_BUFFER_SIZE = 128;
 
-
-// class ArduinoSerial {
-//   public:
-//   ArduinoSerial(Yivo* y, Stream* s): yivo(y), stream(s) {}
-
-//     // inline Error pack_n_send(uint8_t msgid) {
-//     //     // return pack_n_send(msgid, nullptr, 0);
-//     //     return pack_n_send(msgid, this->buff, this->payload_size);
-//     // }
-
-//     Error pack_n_send(uint8_t msgid, uint8_t *data, uint16_t sz) {
-//       Error err = yivo->pack(msgid, data, sz);
-//       if (err == Error::NONE) {
-//         stream->write(buff, sz + 6); // FIXME: be able to redefine serial
-//       }
-//       return err;
-//     }
-
-//     /*
-//     Reads in a packet from a serial connection.
-
-//     Returns: message ID
-//     */
-//     uint8_t read_packet() {
-//       int retry = 16;
-//       while (retry-- > 0) {
-//         if (stream.available() > 5) {
-//           buff[0] = buff[1];
-//           buff[1] = stream->read();
-//           if ((buff[0] == this->h0) && (buff[1] == this->h1)) {
-//             buff[2] = stream->read(); // low byte
-//             buff[3] = stream->read(); // high byte
-//             uint16_t payload_size = (buff[3] << 8) + buff[2];
-//             buff[4] = stream->read(); // msgid
-//             stream.readBytes(reinterpret_cast<char*>(&buff[5]), payload_size); // payload
-//             buff[5+payload_size] = stream->read(); // checksum
-//             return buff[4]; // msgid
-//           }
-//         }
-//         else delay(10);
-//       }
-
-//       return 0;
-//     }
-
-//     Yivo* yivo;
-//     Stream* stream;
-// };
-
-template<uint16_t BUFFER_SIZE>
 class Yivo {
     public:
-    Yivo(char a='$', char b='K'): h0(a), h1(b) {}
+    Yivo(char a='$', char b='K'): h0(a), h1(b), error_msg(NONE) {}
     ~Yivo() {}
 
     /*
@@ -111,12 +62,12 @@ class Yivo {
     sz: size of data to be sent, sz < (BUFFER_SIZE - 6)
     */
     int pack(uint8_t msgid, uint8_t *data, uint16_t sz) {
-        if (sz+6 > BUFFER_SIZE) {
-            // return Error::EXCEED_BUFFER;
+        if (sz+6 > YIVO_BUFFER_SIZE) {
+            error_msg = Error::EXCEED_BUFFER;
             return -1;
         }
 
-        memset(this->buff, 0, BUFFER_SIZE);
+        memset(this->buff, 0, YIVO_BUFFER_SIZE);
         this->buff[0] = h0;
         this->buff[1] = h1;
         this->buff[2] = uint8_t(sz & 0xFF); // low byte
@@ -131,76 +82,114 @@ class Yivo {
         else {
             cs = msgid;
         }
-        this->buff[5+sz] = cs; // off by 1?
-
+        this->buff[5+sz] = cs;
         this->payload_size = sz;
-        // return Error::NONE;
         return sz + 6;
     }
 
+    bool valid_msg(uint8_t *buf) {
+      if ((buf[0] != h0) || (buf[1] != h1)) return false;
+      uint16_t len = (buf[3] << 1) & buf[2];
+      uint8_t msgid = buf[4];
+      uint8_t *payload = &buf[5];
+      uint8_t cs = checksum(len, msgid, payload);
+      if (cs != buf[len+5]) return false;
+      return true;
+    }
+
     template<typename T>
-    T unpack(uint8_t *payload, uint16_t payload_size) {
+    T unpack_buffer(uint8_t *buf) {
         T val;
-        memcpy(&val, payload, payload_size);
+        uint16_t len = (buf[3] << 8) | buf[2];
+        memcpy(reinterpret_cast<void*>(&val), reinterpret_cast<void*>(&buf[5]), len);
         return val;
     }
 
     template<typename T>
-    T unpack() {
-        T val;
-        memcpy(&val, this->get_payload_buffer(), this->get_payload_size());
-        return val;
+    inline T unpack() {
+        // T val;
+        // memcpy(&val, this->get_payload_buffer(), this->get_payload_size());
+        // return val;
+        return unpack_buffer<T>(this->get_buffer());
     }
 
-#ifdef Arduino_h
-    // inline int pack_n_send(uint8_t msgid) {
-    //     // return pack_n_send(msgid, nullptr, 0);
-    //     return pack_n_send(msgid, this->buff, this->payload_size);
-    // }
-
-    int pack_n_send(uint8_t msgid, uint8_t *data, uint16_t sz) {
-      int size = pack(msgid, data, sz);
-      if (size != -1) {
-        Serial.write(buff, size);
-      }
-      return size;
-    }
+    enum ReadState_t {
+      NONE_STATE, // 0
+      H0_STATE,   // 1
+      H1_STATE,   // 2
+      S0_STATE,   // 3
+      S1_STATE,   // 4
+      TYPE_STATE, // 5
+      DATA_STATE, // 6
+      CS_STATE    // 7
+    };
 
     /*
-    Reads in a packet from a serial connection.
-
-    Returns: message ID or -1 on error
+    Read in one byte at a time, yivo keeps track of the state until it
+    finds a good message.
+    Returns: bool true - valid message, false - no message yet
     */
-    int read_packet() {
-      int retry = 16;
-      while (retry-- > 0) {
-        if (Serial.available() > 5) {
-          buff[0] = buff[1];
-          buff[1] = Serial.read();
-          if ((buff[0] == this->h0) && (buff[1] == this->h1)) {
-            buff[2] = Serial.read(); // low byte
-            buff[3] = Serial.read(); // high byte
-            uint16_t payload_size = (buff[3] << 8) + buff[2];
-            buff[4] = Serial.read(); // msgid
-            Serial.readBytes(reinterpret_cast<char*>(&buff[5]), payload_size); // payload
-            buff[5+payload_size] = Serial.read(); // checksum
-            return buff[4]; // msgid
+    bool read(uint8_t c) {
+      bool ret = false;
+      // cout << "readState: " << int(readState) << endl;
+      switch (readState) {
+        case NONE_STATE:
+          if (c == this->h0) {
+            reset_buffer();
+            readState = H0_STATE;
+            buff[0] = c; // h0
+            error_msg = NONE;
           }
-        }
-        else delay(100);
+          else {
+            error_msg = INVALID_HEADER;
+          }
+          break;
+        case H0_STATE:
+          if (c == this->h1) {
+            readState = H1_STATE;
+            buff[1] = c; // h1
+          }
+          else {
+            readState = NONE_STATE;
+            index = 0;
+            buff[0] = 0;
+            error_msg = INVALID_HEADER;
+          }
+          break;
+        case H1_STATE:
+          readState = S0_STATE;
+          buff[2] = c; // size0
+          break;
+        case S0_STATE:
+          readState = S1_STATE;
+          payload_size = (c << 8) | buff[2];
+          // cout << "size: " << int(buff[2]) << " " << int(c) << " " << payload_size << endl;
+          buff[3] = c; // size1
+          break;
+        case S1_STATE:
+          readState = TYPE_STATE;
+          buff[4] = c; // type
+          break;
+        case TYPE_STATE:
+          readState = DATA_STATE;
+          buff[5] = c; // data0
+          break;
+        case DATA_STATE:
+          buff[index++] = c; // data1-dataN
+          if ((index - 5) == (payload_size)) readState = CS_STATE;
+          break;
+        case CS_STATE:
+          buff[index + 1] = c; // checksum
+          // check if cs is correct
+          uint8_t cs = checksum(payload_size, buff[4], &buff[5]);
+          if (cs == c) ret = true;
+          // else cout << "crap " << int(cs) << " " << int(c) << endl;
+          readState = NONE_STATE;
+          break;
       }
 
-      return -1;
+      return ret;
     }
-#else
-    int read_packet() {
-        return -1;
-    }
-
-    inline int pack_n_send(uint8_t msgid, uint8_t *data=nullptr, uint16_t sz=0) {
-        return -1;
-    }
-#endif
 
     inline uint8_t* get_buffer() {
         return this->buff;
@@ -218,8 +207,73 @@ class Yivo {
         return this->payload_size;
     }
 
+    inline const uint8_t get_error_msg() const { return error_msg; }
+
     protected:
-    uint8_t buff[BUFFER_SIZE];
+    uint8_t error_msg;
+    uint8_t buff[YIVO_BUFFER_SIZE];
     uint16_t payload_size; // payload size, doesn't count header/cs (+6B more)
-    char h0, h1; // header bytes
+    const char h0, h1; // header bytes
+
+    uint16_t index;
+    uint8_t readState;
+
+    void reset_buffer() {
+      memset(buff, 0, YIVO_BUFFER_SIZE);
+      readState = NONE_STATE;
+      payload_size = 0;
+      index = 6;
+    }
 };
+
+
+
+// #ifdef Arduino_h
+//     // inline int pack_n_send(uint8_t msgid) {
+//     //     // return pack_n_send(msgid, nullptr, 0);
+//     //     return pack_n_send(msgid, this->buff, this->payload_size);
+//     // }
+
+//     int pack_n_send(uint8_t msgid, uint8_t *data, uint16_t sz) {
+//       int size = pack(msgid, data, sz);
+//       if (size != -1) {
+//         Serial.write(buff, size);
+//       }
+//       return size;
+//     }
+
+//     /*
+//     Reads in a packet from a serial connection.
+
+//     Returns: message ID or -1 on error
+//     */
+//     int read_packet() {
+//       int retry = 16;
+//       while (retry-- > 0) {
+//         if (Serial.available() > 5) {
+//           buff[0] = buff[1];
+//           buff[1] = Serial.read();
+//           if ((buff[0] == this->h0) && (buff[1] == this->h1)) {
+//             buff[2] = Serial.read(); // low byte
+//             buff[3] = Serial.read(); // high byte
+//             uint16_t payload_size = (buff[3] << 8) + buff[2];
+//             buff[4] = Serial.read(); // msgid
+//             Serial.readBytes(reinterpret_cast<char*>(&buff[5]), payload_size); // payload
+//             buff[5+payload_size] = Serial.read(); // checksum
+//             return buff[4]; // msgid
+//           }
+//         }
+//         else delay(100);
+//       }
+
+//       return -1;
+//     }
+// #else
+//     int read_packet() {
+//         return -1;
+//     }
+
+//     inline int pack_n_send(uint8_t msgid, uint8_t *data=nullptr, uint16_t sz=0) {
+//         return -1;
+//     }
+// #endif

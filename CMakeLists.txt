@@ -35,10 +35,13 @@ target_include_directories(${PROJECT_NAME}
 )
 
 # Examples -----------------------------------------------------------
-add_subdirectory(cmake/examples)
+option(EXAMPLES "gecko google tests" ON)
+if(${EXAMPLES})
+    add_subdirectory(cmake/examples)
+endif()
 
 # Tests --------------------------------------------------------------
-# option(TESTS "gecko google tests" ON)
-# if(${TESTS})
-#     add_subdirectory(cmake/gtests)
-# endif()
+option(TESTS "gecko google tests" ON)
+if(${TESTS})
+    add_subdirectory(cmake/gtests)
+endif()
