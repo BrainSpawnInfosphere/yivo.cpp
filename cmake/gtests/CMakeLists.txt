@@ -25,7 +25,7 @@ list(APPEND yivo-gtests
 message(STATUS "yivo::gTests ----------------------")
 foreach(name ${yivo-gtests})
     # get_filename_component(name ${src} NAME_WE)
-    message(STATUS " -> ${name}")
+    # message(STATUS " -> ${name}")
     # message(STATUS ">> ${ALL_LIBS}")
     add_executable(${name} ${name}.cpp)
     target_link_libraries(${name}
