@@ -53,7 +53,8 @@ constexpr uint16_t YIVO_BUFFER_SIZE = 128;
 
 class Yivo {
     public:
-    Yivo(char a='$', char b='K'): h0(a), h1(b), error_msg(NONE) {}
+    Yivo(char a='$', char b='K'): h0(a), h1(b), readState(NONE_STATE),
+      error_msg(NONE) {}
     ~Yivo() {}
 
     /*

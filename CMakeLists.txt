@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.10)
-PROJECT(yivo VERSION "0.1.0")
+cmake_minimum_required(VERSION 3.25)
+PROJECT(yivo VERSION "2023.02.12")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -31,13 +31,8 @@ endif()
 
 add_library(${PROJECT_NAME}
     src/packet.cpp
-    # src/seriallib.cpp
-    # src/imu.cpp
-    # src/pt.cpp
-    # src/pose.cpp
-    # src/twist.cpp
-    # src/wrench.cpp
 )
+
 target_include_directories(${PROJECT_NAME}
     PUBLIC
         src/
@@ -46,11 +41,11 @@ target_include_directories(${PROJECT_NAME}
 # Examples -----------------------------------------------------------
 # option(BUILD_EXAMPLES "gecko google tests" ON)
 if(${BUILD_EXAMPLES})
-    add_subdirectory(cmake/examples)
+    add_subdirectory(examples)
 endif()
 
 # Tests --------------------------------------------------------------
 # option(BUILD_GTESTS "gecko google tests" ON)
 if(${BUILD_GTESTS})
-    add_subdirectory(cmake/gtests)
+    add_subdirectory(gtests)
 endif()

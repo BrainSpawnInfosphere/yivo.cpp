@@ -1,4 +1,3 @@
-
 include(FetchContent)
 
 # GTest -----------------
@@ -18,15 +17,14 @@ endif()
 #----------------------------
 enable_testing()
 
-list(APPEND yivo-gtests
+list(APPEND gci-gtests
+    main-gtest
     msgs-gtest
 )
 
-message(STATUS "yivo::gTests ----------------------")
-foreach(name ${yivo-gtests})
-    # get_filename_component(name ${src} NAME_WE)
+message(STATUS "gci::gTests ----------------------")
+foreach(name ${gci-gtests})
     # message(STATUS " -> ${name}")
-    # message(STATUS ">> ${ALL_LIBS}")
     add_executable(${name} ${name}.cpp)
     target_link_libraries(${name}
         GTest::gtest_main
@@ -35,5 +33,4 @@ foreach(name ${yivo-gtests})
 endforeach()
 
 include(GoogleTest)
-gtest_discover_tests(${yivo-gtests})
-
+gtest_discover_tests(${gci-gtests})
