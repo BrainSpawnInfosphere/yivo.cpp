@@ -21,6 +21,14 @@
 |---|---|---|---|---|-----|----|
 |`$`|`K`| N | N | T | ... | checksum |
 
+## Todo
+
+- [ ] Should I move to a 16b checksum? I don't have many messages, but
+      the payload can be 16b long
+- [x] Remove messages from library. This is just a binary packer and
+      not dependant on the message format other than, it is a `struct`
+- [x] Make a header only library
+
 # MIT License
 
 **Copyright (c) 2020 Mom's Friendly Robot Company**

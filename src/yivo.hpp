@@ -47,7 +47,21 @@ enum Error: uint8_t {
 };
 
 
-uint8_t checksum(uint16_t payload_size, uint8_t msgid, uint8_t *data);
+uint8_t checksum(uint16_t payload_size, uint8_t msgid, uint8_t *data) {
+    uint8_t cs = 0;
+    // uint8_t hb = uint8_t(size >> 8);
+    // uint8_t lb = uint8_t(size & 0xFFFF);
+    // cs = lb ^ hb;
+    int_t v;
+    v.b16 = payload_size;
+    cs = v.b8[0] ^ v.b8[1];
+    cs ^= msgid;
+    for (int i=0; i < payload_size; ++i) {
+        cs ^= data[i];
+    }
+
+    return cs;
+}
 
 constexpr uint16_t YIVO_BUFFER_SIZE = 128;
 

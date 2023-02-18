@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-PROJECT(yivo VERSION "2023.02.12")
+PROJECT(yivo VERSION "2023.02.18")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -29,23 +29,17 @@ else()
     set(BUILD_GTESTS OFF)
 endif()
 
-add_library(${PROJECT_NAME}
-    src/packet.cpp
-)
-
-target_include_directories(${PROJECT_NAME}
-    PUBLIC
-        src/
-)
+add_library(${PROJECT_NAME} INTERFACE)
+target_include_directories(${PROJECT_NAME} INTERFACE src/)
 
 # Examples -----------------------------------------------------------
-# option(BUILD_EXAMPLES "gecko google tests" ON)
+message(STATUS "Building ${PROJECT_NAME} examples is ${BUILD_EXAMPLES}")
 if(${BUILD_EXAMPLES})
     add_subdirectory(examples)
 endif()
 
 # Tests --------------------------------------------------------------
-# option(BUILD_GTESTS "gecko google tests" ON)
+message(STATUS "Building ${PROJECT_NAME} gtests is ${BUILD_GTESTS}")
 if(${BUILD_GTESTS})
     add_subdirectory(gtests)
 endif()

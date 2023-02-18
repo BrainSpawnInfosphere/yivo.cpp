@@ -2,7 +2,7 @@ list(APPEND gtests
     main.cpp
 )
 
-message(STATUS "yivo::Examples ----------------------")
+# message(STATUS "yivo::Examples ----------------------")
 foreach(src ${gtests})
     get_filename_component(name ${src} NAME_WE)
     # message(STATUS " -> ${name}")
