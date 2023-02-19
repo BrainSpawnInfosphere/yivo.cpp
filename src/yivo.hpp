@@ -184,6 +184,7 @@ class Yivo {
         case S1_STATE:
           readState = TYPE_STATE;
           buff[4] = c; // type
+          buffer_msgid = c;
           break;
         case TYPE_STATE:
           readState = DATA_STATE;
@@ -222,6 +223,8 @@ class Yivo {
         return this->payload_size;
     }
 
+    inline const uint8_t get_buffer_msgid() const { return buffer_msgid; }
+
     inline const uint8_t get_error_msg() const { return error_msg; }
 
     protected:
@@ -232,12 +235,14 @@ class Yivo {
 
     uint16_t index;
     uint8_t readState;
+    uint8_t buffer_msgid;
 
     void reset_buffer() {
       memset(buff, 0, YIVO_BUFFER_SIZE);
       readState = NONE_STATE;
       payload_size = 0;
       index = 6;
+      buffer_msgid = 0;
     }
 };
 
