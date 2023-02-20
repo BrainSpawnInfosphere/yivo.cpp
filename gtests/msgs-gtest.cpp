@@ -1,11 +1,11 @@
 #include <gtest/gtest.h> // googletest header file
-#include <yivo.hpp>
 #include <iostream>
 #include <stdlib.h>
+#include <yivo.hpp>
 
 using namespace std;
 
-struct __attribute__ ((packed)) msg_t {
+struct __attribute__((packed)) msg_t {
   uint8_t a;  // 1
   uint32_t b; // 4
 };
@@ -15,9 +15,7 @@ struct __attribute__ ((packed)) msg_t {
 //   EXPECT_TRUE(a.b == b.b);
 // }
 
-TEST(protocol_2, dummy){
-    EXPECT_TRUE(true);
-}
+TEST(protocol_2, dummy) { EXPECT_TRUE(true); }
 
 TEST(packing, simple) {
   // struct __attribute__ ((packed)) msg_t {
@@ -26,16 +24,17 @@ TEST(packing, simple) {
   // };
 
   Yivo yivo;
-  msg_t m{10,1000};
+  msg_t m{10, 1000};
 
-  yivo.pack(10,reinterpret_cast<uint8_t*>(&m), sizeof(m));
+  yivo.pack(10, reinterpret_cast<uint8_t *>(&m), sizeof(m));
 
   uint8_t buf[64];
   memcpy(buf, yivo.get_buffer(), yivo.get_total_size());
   EXPECT_TRUE(yivo.valid_msg(buf));
 
   uint8_t *pmsg = yivo.get_buffer();
-  for (int i=0; i < yivo.get_total_size(); ++i) EXPECT_TRUE(buf[i] == pmsg[i]);
+  for (int i = 0; i < yivo.get_total_size(); ++i)
+    EXPECT_TRUE(buf[i] == pmsg[i]);
 
   msg_t m2 = yivo.unpack<msg_t>();
   EXPECT_TRUE(m.a == m2.a);
@@ -50,9 +49,9 @@ TEST(packing, simple) {
 TEST(packing, read) {
 
   Yivo yivo;
-  msg_t m{10,1000};
+  msg_t m{10, 1000};
 
-  yivo.pack(10,reinterpret_cast<uint8_t*>(&m), sizeof(m));
+  yivo.pack(10, reinterpret_cast<uint8_t *>(&m), sizeof(m));
 
   // cout << "pack size: " << yivo.get_payload_size() << endl;
 
@@ -62,9 +61,9 @@ TEST(packing, read) {
 
   // uint8_t *pmsg = yivo.get_buffer();
   bool ok = false;
-  for (int i=0; i < yivo.get_total_size(); ++i) {
+  for (int i = 0; i < yivo.get_total_size(); ++i) {
     uint8_t c = buf[i];
-    ok = yivo.read(c);
+    ok        = yivo.read(c);
     // cout << ok << " " << int(c) << " " << char(c) << endl;
   }
   EXPECT_TRUE(ok);
