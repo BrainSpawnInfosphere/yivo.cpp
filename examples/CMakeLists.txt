@@ -1,5 +1,6 @@
 list(APPEND gtests
     main.cpp
+    save.cpp
 )
 
 # message(STATUS "yivo::Examples ----------------------")
